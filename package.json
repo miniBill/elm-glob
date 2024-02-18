@@ -1,7 +1,7 @@
 {
-  "name": "REPLACEME-AUTHOR-SLASH-REPO",
-  "version": "0.0.1",
-  "description": "REPLACEME",
+  "name": "elm-glob",
+  "version": "1.0.0",
+  "description": "Check glob patterns against strings",
   "devDependencies": {
     "elm-review": "^2.10.3",
     "elm-test": "^0.19.1-revision9",
@@ -10,9 +10,10 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
+    "docs": "elm make --docs=docs.json",
     "test": "elm-verify-examples --run-tests && elm-test",
     "postinstall": "elm-tooling install"
   },
-  "author": "REPLACEME",
-  "license": "BSD-3-Clause"
+  "author": "miniBill",
+  "license": "MIT"
 }

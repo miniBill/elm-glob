@@ -15,13 +15,18 @@ import Docs.NoMissing exposing (exposedModules, onlyExposed)
 import Docs.ReviewAtDocs
 import Docs.ReviewLinksAndSections
 import Docs.UpToDateReadmeLinks
+import NoConfusingPrefixOperator
 import NoDebug.Log
 import NoDebug.TodoOrToString
 import NoExposingEverything
 import NoImportingEverything
 import NoInconsistentAliases
 import NoMissingTypeAnnotation
+import NoMissingTypeAnnotationInLetIn
+import NoMissingTypeExpose
 import NoModuleOnExposedNames
+import NoPrematureLetComputation
+import NoSimpleLetBody
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
@@ -31,6 +36,7 @@ import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
 import Review.Rule exposing (Rule)
+import Simplify
 
 
 config : List Rule
@@ -39,19 +45,21 @@ config =
     , NoUnused.Exports.rule
     , NoUnused.Dependencies.rule
     , NoUnused.CustomTypeConstructorArgs.rule
-
-    --, NoUnused.Variables.rule
-    -- , NoUnused.CustomTypeConstructors.rule []
+    , NoUnused.Variables.rule
+    , NoUnused.CustomTypeConstructors.rule []
     , NoUnused.Parameters.rule
-
-    --, NoUnused.Patterns.rule
+    , NoUnused.Patterns.rule
     , NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
         |> Review.Rule.ignoreErrorsForDirectories [ "tests" ]
     , NoExposingEverything.rule
-
-    --, NoImportingEverything.rule []
+    , NoImportingEverything.rule []
+    , NoSimpleLetBody.rule
+    , NoPrematureLetComputation.rule
+    , Simplify.rule Simplify.defaults
     , NoMissingTypeAnnotation.rule
+    , NoMissingTypeAnnotationInLetIn.rule
+    , NoMissingTypeExpose.rule
 
     --, NoInconsistentAliases.config
     --    [ ( "Html.Attributes", "Attr" )
@@ -68,6 +76,7 @@ config =
     , Docs.ReviewLinksAndSections.rule
     , Docs.ReviewAtDocs.rule
     , Docs.UpToDateReadmeLinks.rule
+    , NoConfusingPrefixOperator.rule
     ]
         |> List.map
             (\rule ->
