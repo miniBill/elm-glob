@@ -11,7 +11,7 @@
   },
   "scripts": {
     "docs": "elm make --docs=docs.json",
-    "test": "elm-verify-examples --run-tests && elm-test",
+    "test": "elm-test && elm-verify-examples --run-tests",
     "postinstall": "elm-tooling install"
   },
   "author": "miniBill",

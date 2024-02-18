@@ -1,9 +1,9 @@
-module Examples exposing (..)
+module Examples exposing (matchTests, parseTests)
 
-import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, int, list, string)
+import Expect
 import Glob
-import Test exposing (..)
+import Set
+import Test exposing (Test, describe, test)
 
 
 expectations : List { glob : String, input : String, expected : Bool }
@@ -26,11 +26,34 @@ expectations =
     , { glob = "src/foo.?ss", input = "src/foo.css", expected = True }
     , { glob = "src/foo.?ss", input = "src/foo.ss", expected = False }
     , { glob = "**/*", input = "src/foo.css", expected = True }
+    , { glob = "src/foo", input = "src/foo/bar.css", expected = False }
+    , { glob = "weird\\/name", input = "weird\\/name", expected = True }
+    , { glob = "weird\\/name", input = "weird/name", expected = False }
     ]
 
 
-all : Test
-all =
+parseTests : Test
+parseTests =
+    expectations
+        |> List.map .glob
+        |> Set.fromList
+        |> Set.toList
+        |> List.map
+            (\glob ->
+                test ("Glob: " ++ glob) <|
+                    \_ ->
+                        case Glob.parse glob of
+                            Err _ ->
+                                Expect.fail "Failed to parse"
+
+                            Ok _ ->
+                                Expect.pass
+            )
+        |> describe "Glob.parse"
+
+
+matchTests : Test
+matchTests =
     List.map
         (\{ glob, input, expected } ->
             test ("Glob: " ++ glob ++ " Input: " ++ input)
@@ -41,4 +64,4 @@ all =
                 )
         )
         expectations
-        |> describe "GlobToRegex"
+        |> describe "Glob.match"
