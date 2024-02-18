@@ -52,7 +52,11 @@ matchComponents components segments =
             False
 
         ( TwoAsterisks :: ctail, _ :: stail ) ->
-            matchComponents components stail || matchComponents ctail segments
+            if matchComponents components stail then
+                True
+
+            else
+                matchComponents ctail segments
 
         ( (Fragments ( _, chead )) :: ctail, shead :: stail ) ->
             if Regex.contains chead shead then
