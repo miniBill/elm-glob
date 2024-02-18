@@ -127,6 +127,15 @@ fragmentsToRegex fragments =
             Regex.never
 
         Just regex ->
+            let
+                _ =
+                    Debug.log
+                        ("Converted "
+                            ++ Debug.toString fragments
+                            ++ " into"
+                        )
+                        regexString
+            in
             regex
 
 
@@ -172,7 +181,10 @@ regexEscape input =
 fragmentParser : Parser Fragment
 fragmentParser =
     Parser.oneOf
-        [ Parser.succeed QuestionMark
+        [ Parser.succeed Literal
+            |. Parser.symbol "\\"
+            |= Parser.getChompedString (Parser.chompIf (\_ -> True))
+        , Parser.succeed QuestionMark
             |. Parser.symbol "?"
         , Parser.succeed Asterisk
             |. Parser.symbol "*"
@@ -183,19 +195,19 @@ fragmentParser =
                 , separator = ","
                 , trailing = Parser.Forbidden
                 , spaces = Parser.succeed ()
-                , item = literalParser
+                , item = nonemptyChomper <| \c -> notSpecial c && c /= ','
                 }
         , Parser.succeed Literal
-            |= literalParser
+            |= nonemptyChomper notSpecial
         , Parser.problem "fragmentParser"
         ]
 
 
-literalParser : Parser String
-literalParser =
+nonemptyChomper : (Char -> Bool) -> Parser String
+nonemptyChomper f =
     Parser.getChompedString
-        (Parser.chompIf notSpecial
-            |. Parser.chompWhile notSpecial
+        (Parser.chompIf f
+            |. Parser.chompWhile f
         )
 
 
