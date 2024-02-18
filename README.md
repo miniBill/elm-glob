@@ -7,6 +7,6 @@ Usage:
 ```elm
 import Glob
 
-Glob.match "src/*.css" "src/style.css" --> True
-Glob.match "src/file.?sv" "src/file.sv" --> False
+Glob.match "src/*.css" "src/style.css" --> Ok True
+Glob.match "src/file.?sv" "src/file.sv" --> Ok False
 ```
