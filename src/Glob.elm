@@ -160,8 +160,7 @@ regexEscape input =
                             [ '\\', c ]
 
                         _ ->
-                            -- [ '[', c, ']' ]
-                            [ '\\', c ]
+                            [ '[', c, ']' ]
             )
         |> String.fromList
 
