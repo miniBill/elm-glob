@@ -73,7 +73,7 @@ parse : String -> Result (List Parser.DeadEnd) Glob
 parse input =
     input
         |> Parser.run parser
-        |> Result.map (Debug.log ("Parsed " ++ input ++ " as ") >> Glob)
+        |> Result.map Glob
 
 
 parser : Parser (List Component)
@@ -94,24 +94,28 @@ componentParser =
     Parser.oneOf
         [ Parser.succeed TwoAsterisks
             |. Parser.symbol "**"
-        , Parser.sequence
-            { start = ""
-            , end = ""
-            , separator = ""
-            , trailing = Parser.Optional
-            , spaces = Parser.succeed ()
-            , item = fragmentParser
-            }
+        , Parser.succeed (\before parsed after source -> ( parsed, String.slice before after source ))
+            |= Parser.getOffset
+            |= Parser.sequence
+                { start = ""
+                , end = ""
+                , separator = ""
+                , trailing = Parser.Optional
+                , spaces = Parser.succeed ()
+                , item = fragmentParser
+                }
+            |= Parser.getOffset
+            |= Parser.getSource
             |> Parser.andThen
-                (\fragments ->
+                (\( fragments, original ) ->
                     Parser.succeed (\regex -> Fragments ( fragments, regex ))
-                        |= fragmentsToRegex fragments
+                        |= fragmentsToRegex original fragments
                 )
         ]
 
 
-fragmentsToRegex : List Fragment -> Parser Regex
-fragmentsToRegex fragments =
+fragmentsToRegex : String -> List Fragment -> Parser Regex
+fragmentsToRegex original fragments =
     let
         regexString : String
         regexString =
@@ -125,18 +129,9 @@ fragmentsToRegex fragments =
                 "Could not parse "
                     ++ escape regexString
                     ++ " as a regex, obtained from "
-                    ++ Debug.toString fragments
+                    ++ original
 
         Just regex ->
-            let
-                _ =
-                    Debug.log
-                        ("Converted "
-                            ++ Debug.toString fragments
-                            ++ " into"
-                        )
-                        regexString
-            in
             Parser.succeed regex
 
 
