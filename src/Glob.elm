@@ -1,18 +1,29 @@
-module Glob exposing (Glob, parse, match)
+module Glob exposing
+    ( match
+    , Glob, fromString, matchGlob
+    )
 
 {-|
 
-@docs Glob, parse, match
+
+# Simple usage
+
+@docs match
+
+
+# Efficient usage
+
+@docs Glob, fromString, matchGlob
 
 -}
 
-import Json.Encode
 import Parser exposing ((|.), (|=), Parser)
 import Regex exposing (Regex)
 import Set exposing (Set)
 
 
-{-| -}
+{-| A type representing a correctly parsed Glob expression.
+-}
 type Glob
     = Glob (List Component)
 
@@ -30,15 +41,22 @@ type Fragment
     | Asterisk
 
 
-{-| -}
-match : String -> String -> Bool
-match glob input =
-    case parse glob of
-        Err _ ->
-            False
+{-| Match a given glob against an input.
 
-        Ok (Glob parsed) ->
-            matchComponents parsed (String.split "/" input)
+If you want to match the same glob against multiple inputs you should use `parse` and `matchGlob` instead.
+
+-}
+match : String -> String -> Result (List Parser.DeadEnd) Bool
+match glob input =
+    fromString glob
+        |> Result.map (\parsed -> matchGlob parsed input)
+
+
+{-| Match a given glob against an input.
+-}
+matchGlob : Glob -> String -> Bool
+matchGlob (Glob parsed) input =
+    matchComponents parsed (String.split "/" input)
 
 
 matchComponents : List Component -> List String -> Bool
@@ -68,9 +86,10 @@ matchComponents components segments =
                 False
 
 
-{-| -}
-parse : String -> Result (List Parser.DeadEnd) Glob
-parse input =
+{-| Parse a string into a `Glob`.
+-}
+fromString : String -> Result (List Parser.DeadEnd) Glob
+fromString input =
     input
         |> Parser.run parser
         |> Result.map Glob
@@ -126,20 +145,13 @@ fragmentsToRegex original fragments =
     case Regex.fromStringWith { caseInsensitive = False, multiline = True } ("^" ++ regexString ++ "$") of
         Nothing ->
             Parser.problem <|
-                "Could not parse "
-                    ++ escape regexString
-                    ++ " as a regex, obtained from "
+                "Could not parse \""
+                    ++ regexString
+                    ++ "\" as a regex, obtained from "
                     ++ original
 
         Just regex ->
             Parser.succeed regex
-
-
-escape : String -> String
-escape input =
-    input
-        |> Json.Encode.string
-        |> Json.Encode.encode 0
 
 
 fragmentToRegexString : Fragment -> String

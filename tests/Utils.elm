@@ -26,7 +26,7 @@ parseAll expectations =
             (\glob ->
                 test ("Glob: " ++ escape glob) <|
                     \_ ->
-                        case Glob.parse glob of
+                        case Glob.fromString glob of
                             Err [ single ] ->
                                 case single.problem of
                                     Parser.Problem message ->
@@ -52,7 +52,7 @@ checkAll expectations =
                 test ("Glob: " ++ escape glob ++ " Input: " ++ escape input)
                     (\() ->
                         -- match to be implemented yourself :D
-                        if Glob.match glob input == expected then
+                        if Glob.match glob input == Ok expected then
                             Expect.pass
 
                         else if expected then
