@@ -29,6 +29,11 @@ expectations =
     , { glob = "src/foo", input = "src/foo/bar.css", expected = False }
     , { glob = "weird\\/name", input = "weird\\/name", expected = True }
     , { glob = "weird\\/name", input = "weird/name", expected = False }
+    , { glob = "src/\\*.css", input = "src/*.css", expected = True }
+    , { glob = "src/\\*.css", input = "src/a.css", expected = False }
+    , { glob = "src/*.{css\\,html}", input = "src/foo.css,html", expected = True }
+    , { glob = "src/*.{css\\,html}", input = "src/foo.css", expected = False }
+    , { glob = "src/*.{css\\,html}", input = "src/foo.html", expected = False }
     ]
 
 
