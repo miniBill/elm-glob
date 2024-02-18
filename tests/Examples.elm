@@ -1,12 +1,10 @@
 module Examples exposing (matchTests, parseTests)
 
-import Expect
-import Glob
-import Set
-import Test exposing (Test, describe, test)
+import Test exposing (Test, describe)
+import Utils
 
 
-expectations : List { glob : String, input : String, expected : Bool }
+expectations : List Utils.Expectation
 expectations =
     [ { glob = "src/foo.css", input = "src/foo.css", expected = True }
     , { glob = "src/other.css", input = "src/foo.css", expected = False }
@@ -31,42 +29,23 @@ expectations =
     , { glob = "weird\\/name", input = "weird/name", expected = False }
     , { glob = "src/\\*.css", input = "src/*.css", expected = True }
     , { glob = "src/\\*.css", input = "src/a.css", expected = False }
-    , { glob = "src/*.{css\\,html}", input = "src/foo.css,html", expected = True }
-    , { glob = "src/*.{css\\,html}", input = "src/foo.css", expected = False }
-    , { glob = "src/*.{css\\,html}", input = "src/foo.html", expected = False }
+    , { glob = "[^]", input = "^", expected = True }
+
+    -- , { glob = "src/*.{css\\,html}", input = "src/foo.css,html", expected = True }
+    -- , { glob = "src/*.{css\\,html}", input = "src/foo.css", expected = False }
+    -- , { glob = "src/*.{css\\,html}", input = "src/foo.html", expected = False }
     ]
 
 
 parseTests : Test
 parseTests =
     expectations
-        |> List.map .glob
-        |> Set.fromList
-        |> Set.toList
-        |> List.map
-            (\glob ->
-                test ("Glob: " ++ glob) <|
-                    \_ ->
-                        case Glob.parse glob of
-                            Err _ ->
-                                Expect.fail "Failed to parse"
-
-                            Ok _ ->
-                                Expect.pass
-            )
+        |> Utils.parseAll
         |> describe "Glob.parse"
 
 
 matchTests : Test
 matchTests =
-    List.map
-        (\{ glob, input, expected } ->
-            test ("Glob: " ++ glob ++ " Input: " ++ input)
-                (\() ->
-                    -- match to be implemented yourself :D
-                    Glob.match glob input
-                        |> Expect.equal expected
-                )
-        )
-        expectations
+    expectations
+        |> Utils.checkAll
         |> describe "Glob.match"

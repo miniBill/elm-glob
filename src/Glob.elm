@@ -6,6 +6,7 @@ module Glob exposing (Glob, parse, match)
 
 -}
 
+import Json.Encode
 import Parser exposing ((|.), (|=), Parser)
 import Regex exposing (Regex)
 import Set exposing (Set)
@@ -24,6 +25,7 @@ type Component
 type Fragment
     = Literal String
     | Alternatives (Set String)
+    | Class { negative : Bool, inner : String }
     | QuestionMark
     | Asterisk
 
@@ -71,8 +73,7 @@ parse : String -> Result (List Parser.DeadEnd) Glob
 parse input =
     input
         |> Parser.run parser
-        |> Result.map Glob
-        |> Debug.log ("Parsed " ++ input ++ " as ")
+        |> Result.map (Debug.log ("Parsed " ++ input ++ " as ") >> Glob)
 
 
 parser : Parser (List Component)
@@ -93,19 +94,23 @@ componentParser =
     Parser.oneOf
         [ Parser.succeed TwoAsterisks
             |. Parser.symbol "**"
-        , Parser.succeed (\fragments -> Fragments ( fragments, fragmentsToRegex fragments ))
-            |= Parser.sequence
-                { start = ""
-                , end = ""
-                , separator = ""
-                , trailing = Parser.Optional
-                , spaces = Parser.succeed ()
-                , item = fragmentParser
-                }
+        , Parser.sequence
+            { start = ""
+            , end = ""
+            , separator = ""
+            , trailing = Parser.Optional
+            , spaces = Parser.succeed ()
+            , item = fragmentParser
+            }
+            |> Parser.andThen
+                (\fragments ->
+                    Parser.succeed (\regex -> Fragments ( fragments, regex ))
+                        |= fragmentsToRegex fragments
+                )
         ]
 
 
-fragmentsToRegex : List Fragment -> Regex
+fragmentsToRegex : List Fragment -> Parser Regex
 fragmentsToRegex fragments =
     let
         regexString : String
@@ -114,17 +119,13 @@ fragmentsToRegex fragments =
                 |> List.map fragmentToRegexString
                 |> String.concat
     in
-    case Regex.fromString ("^" ++ regexString ++ "$") of
+    case Regex.fromStringWith { caseInsensitive = False, multiline = True } ("^" ++ regexString ++ "$") of
         Nothing ->
-            let
-                _ =
-                    Debug.todo <|
-                        "Could not parse "
-                            ++ regexString
-                            ++ " obtained from "
-                            ++ Debug.toString regexString
-            in
-            Regex.never
+            Parser.problem <|
+                "Could not parse "
+                    ++ escape regexString
+                    ++ " as a regex, obtained from "
+                    ++ Debug.toString fragments
 
         Just regex ->
             let
@@ -136,7 +137,14 @@ fragmentsToRegex fragments =
                         )
                         regexString
             in
-            regex
+            Parser.succeed regex
+
+
+escape : String -> String
+escape input =
+    input
+        |> Json.Encode.string
+        |> Json.Encode.encode 0
 
 
 fragmentToRegexString : Fragment -> String
@@ -147,6 +155,20 @@ fragmentToRegexString fragment =
 
         Alternatives alternatives ->
             "(" ++ String.join "|" (List.map regexEscape <| Set.toList alternatives) ++ ")"
+
+        Class { negative, inner } ->
+            let
+                cut : String
+                cut =
+                    inner
+                        |> String.replace "^" "\\^"
+                        |> String.replace "\\" "\\\\"
+            in
+            if negative then
+                "[^" ++ cut ++ "]"
+
+            else
+                "[" ++ cut ++ "]"
 
         QuestionMark ->
             "."
@@ -197,6 +219,19 @@ fragmentParser =
                 , spaces = Parser.succeed ()
                 , item = nonemptyChomper <| \c -> notSpecial c && c /= ','
                 }
+        , Parser.succeed (\negative inner -> Class { negative = negative, inner = inner })
+            |. Parser.symbol "["
+            |= Parser.oneOf
+                [ Parser.succeed True
+                    |. Parser.symbol "!"
+                , Parser.succeed False
+                ]
+            |= Parser.getChompedString
+                (Parser.succeed ()
+                    |. Parser.oneOf [ Parser.symbol "]", Parser.succeed () ]
+                    |. Parser.chompWhile (\c -> c /= ']')
+                )
+            |. Parser.symbol "]"
         , Parser.succeed Literal
             |= nonemptyChomper notSpecial
         , Parser.problem "fragmentParser"

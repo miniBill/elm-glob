@@ -5,13 +5,14 @@
   "devDependencies": {
     "elm-review": "^2.10.3",
     "elm-test": "^0.19.1-revision9",
+    "elm-test-rs": "^3.0.0-5",
     "elm-tooling": "^1.15.0",
     "elm-verify-examples": "^6.0.3",
     "prettier": "^3.2.5"
   },
   "scripts": {
     "docs": "elm make --docs=docs.json",
-    "test": "elm-test && elm-verify-examples --run-tests",
+    "test": "elm-test-rs && elm-verify-examples --run-tests",
     "postinstall": "elm-tooling install"
   },
   "author": "miniBill",
