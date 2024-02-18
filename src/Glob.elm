@@ -187,23 +187,23 @@ fragmentToRegexString fragment =
 regexEscape : String -> String
 regexEscape input =
     input
-        |> String.toList
-        |> List.concatMap
-            (\c ->
+        |> String.foldr
+            (\c acc ->
                 if Char.isAlphaNum c then
-                    [ c ]
+                    c :: acc
 
                 else
                     case c of
                         '\\' ->
-                            [ '\\', '\\' ]
+                            '\\' :: '\\' :: acc
 
                         ']' ->
-                            [ '\\', c ]
+                            '\\' :: c :: acc
 
                         _ ->
-                            [ '[', c, ']' ]
+                            '[' :: c :: ']' :: acc
             )
+            []
         |> String.fromList
 
 
