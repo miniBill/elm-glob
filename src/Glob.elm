@@ -104,7 +104,7 @@ componentParser =
     Parser.oneOf
         [ Parser.succeed TwoAsterisks
             |. Parser.symbol "**"
-        , Parser.succeed (\before parsed after source -> ( parsed, String.slice before after source ))
+        , Parser.succeed (\before fragments after source -> ( fragments, ( before, after, source ) ))
             |= Parser.getOffset
             |= Parser.sequence
                 { start = ""
@@ -117,15 +117,15 @@ componentParser =
             |= Parser.getOffset
             |= Parser.getSource
             |> Parser.andThen
-                (\( fragments, original ) ->
+                (\( fragments, positionAndSource ) ->
                     Parser.succeed Fragments
-                        |= fragmentsToRegex original fragments
+                        |= fragmentsToRegex positionAndSource fragments
                 )
         ]
 
 
-fragmentsToRegex : String -> List Fragment -> Parser Regex
-fragmentsToRegex original fragments =
+fragmentsToRegex : ( Int, Int, String ) -> List Fragment -> Parser Regex
+fragmentsToRegex ( before, after, source ) fragments =
     let
         regexString : String
         regexString =
@@ -140,7 +140,7 @@ fragmentsToRegex original fragments =
                 "Could not parse \""
                     ++ regexString
                     ++ "\" as a regex, obtained from "
-                    ++ original
+                    ++ String.slice before after source
 
         Just regex ->
             Parser.succeed regex
