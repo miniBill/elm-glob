@@ -14,7 +14,7 @@ module Glob exposing
 
 import Parser exposing ((|.), (|=), Parser)
 import Regex exposing (Regex)
-import Set exposing (Set)
+import Set
 
 
 {-| A Glob expression.
@@ -241,19 +241,17 @@ nonemptyChomper f =
         )
 
 
-specialChars : Set Char
-specialChars =
-    [ '*'
-    , '{'
-    , '}'
-    , '['
-    , ']'
-    , '?'
-    , '/'
-    ]
-        |> Set.fromList
-
-
 notSpecial : Char -> Bool
 notSpecial c =
-    not (Set.member c specialChars)
+    not (isSpecialChar c)
+
+
+isSpecialChar : Char -> Bool
+isSpecialChar c =
+    (c == '/')
+        || (c == '*')
+        || (c == '{')
+        || (c == '}')
+        || (c == '[')
+        || (c == ']')
+        || (c == '?')
