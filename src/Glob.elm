@@ -118,7 +118,7 @@ componentParser =
             |= Parser.getSource
             |> Parser.andThen
                 (\( fragments, original ) ->
-                    Parser.succeed (\regex -> Fragments regex)
+                    Parser.succeed Fragments
                         |= fragmentsToRegex original fragments
                 )
         ]
