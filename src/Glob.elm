@@ -25,7 +25,7 @@ type Glob
 
 type Component
     = TwoAsterisks
-    | Fragments ( List Fragment, Regex )
+    | Fragments Regex
 
 
 type Fragment
@@ -62,7 +62,7 @@ matchComponents components segments =
             else
                 matchComponents ctail segments
 
-        ( (Fragments ( _, chead )) :: ctail, shead :: stail ) ->
+        ( (Fragments chead) :: ctail, shead :: stail ) ->
             if Regex.contains chead shead then
                 matchComponents ctail stail
 
@@ -118,7 +118,7 @@ componentParser =
             |= Parser.getSource
             |> Parser.andThen
                 (\( fragments, original ) ->
-                    Parser.succeed (\regex -> Fragments ( fragments, regex ))
+                    Parser.succeed (\regex -> Fragments regex)
                         |= fragmentsToRegex original fragments
                 )
         ]
