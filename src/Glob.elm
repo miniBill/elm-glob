@@ -128,10 +128,10 @@ fragmentsToRegex before fragments after source =
         regexString =
             List.foldl
                 (\fragment acc -> acc ++ fragmentToRegexString fragment)
-                ""
+                "^"
                 fragments
     in
-    case Regex.fromStringWith { caseInsensitive = False, multiline = True } ("^" ++ regexString ++ "$") of
+    case Regex.fromStringWith { caseInsensitive = False, multiline = True } (regexString ++ "$") of
         Nothing ->
             Parser.problem <|
                 "Could not parse \""
