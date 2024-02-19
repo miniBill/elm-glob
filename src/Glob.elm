@@ -30,7 +30,7 @@ type Component
 
 type Fragment
     = Literal String
-    | Alternatives (Set String)
+    | Alternatives (List String)
     | Class { negative : Bool, inner : String }
     | QuestionMark
     | Asterisk
@@ -153,7 +153,7 @@ fragmentToRegexString fragment =
             regexEscape literal
 
         Alternatives alternatives ->
-            "(" ++ String.join "|" (List.map regexEscape <| Set.toList alternatives) ++ ")"
+            "(" ++ String.join "|" (List.map regexEscape alternatives) ++ ")"
 
         Class { negative, inner } ->
             let
@@ -209,7 +209,7 @@ fragmentParser =
             |. Parser.symbol "?"
         , Parser.succeed Asterisk
             |. Parser.symbol "*"
-        , Parser.succeed (Alternatives << Set.fromList)
+        , Parser.succeed (Alternatives << Set.toList << Set.fromList)
             |= Parser.sequence
                 { start = "{"
                 , end = "}"
