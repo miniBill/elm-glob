@@ -41,7 +41,7 @@ parseTests : Test
 parseTests =
     expectations
         |> Utils.parseAll
-        |> describe "Glob.parse"
+        |> describe "Glob.fromString"
 
 
 matchTests : Test
