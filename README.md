@@ -2,11 +2,17 @@
 
 Matches inputs against a [glob](https://en.wikipedia.org/wiki/Glob_%28programming%29).
 
-Usage:
-
 ```elm
-import Glob
+import Glob exposing (Glob)
 
-Glob.match "src/*.css" "src/style.css" --> Ok True
-Glob.match "src/file.?sv" "src/file.sv" --> Ok False
+glob : Glob
+glob =
+    Glob.fromString "src/*.css*"
+        |> Result.withDefault Glob.never
+
+Glob.match glob "src/style.css"
+--> True
+
+Glob.match glob "src/file.sv"
+--> False
 ```

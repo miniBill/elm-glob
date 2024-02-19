@@ -1,19 +1,14 @@
 module Glob exposing
-    ( match
-    , Glob, fromString, matchGlob
+    ( Glob, fromString
+    , match
     )
 
-{-|
+{-| A library for working with [glob].
 
+[glob]: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
-# Simple usage
-
+@docs Glob, fromString
 @docs match
-
-
-# Efficient usage
-
-@docs Glob, fromString, matchGlob
 
 -}
 
@@ -22,7 +17,7 @@ import Regex exposing (Regex)
 import Set exposing (Set)
 
 
-{-| A type representing a correctly parsed Glob expression.
+{-| A correctly parsed Glob expression.
 -}
 type Glob
     = Glob (List Component)
@@ -41,21 +36,10 @@ type Fragment
     | Asterisk
 
 
-{-| Match a given glob against an input.
-
-If you want to match the same glob against multiple inputs you should use `parse` and `matchGlob` instead.
-
+{-| Match an input against a glob.
 -}
-match : String -> String -> Result (List Parser.DeadEnd) Bool
-match glob input =
-    fromString glob
-        |> Result.map (\parsed -> matchGlob parsed input)
-
-
-{-| Match a given glob against an input.
--}
-matchGlob : Glob -> String -> Bool
-matchGlob (Glob parsed) input =
+match : Glob -> String -> Bool
+match (Glob parsed) input =
     matchComponents parsed (String.split "/" input)
 
 
