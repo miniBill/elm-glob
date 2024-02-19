@@ -215,7 +215,14 @@ fragmentParser =
                 , spaces = Parser.succeed ()
                 , item = nonemptyChomper <| \c -> notSpecial c && c /= ','
                 }
-        , Parser.succeed (\negative inner -> Class { negative = negative, inner = inner })
+        , Parser.succeed
+            (\negative inner closed source ->
+                if closed then
+                    Class { negative = negative, inner = inner }
+
+                else
+                    Literal source
+            )
             |. Parser.symbol "["
             |= Parser.oneOf
                 [ Parser.succeed True
@@ -223,10 +230,14 @@ fragmentParser =
                 , Parser.succeed False
                 ]
             |= Parser.getChompedString
-                (Parser.oneOf [ Parser.symbol "]", Parser.succeed () ]
-                    |. Parser.chompWhile (\c -> c /= ']')
-                )
-            |. Parser.symbol "]"
+                (Parser.chompWhile (\c -> c /= ']'))
+            |= Parser.oneOf
+                [ Parser.symbol "]"
+                    |> Parser.map (\() -> True)
+                , Parser.end
+                    |> Parser.map (\() -> False)
+                ]
+            |= Parser.getSource
         , Parser.succeed Literal
             |= nonemptyChomper notSpecial
         , Parser.problem "fragmentParser"

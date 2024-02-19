@@ -52,6 +52,10 @@ expectations =
     -- such as &&, ||, ~~, --, or [.  Currently re doesn't do anything with
     -- && etc., but they are handled special in re as there are plans to utilize them.
     , { glob = "[[]", input = "[", expected = True }
+    , { glob = "[", input = "[", expected = True }
+    , { glob = "[abc", input = "[abc", expected = True }
+    , { glob = "[abc", input = "[ab", expected = False }
+    , { glob = "[abc", input = "[abcd", expected = False }
     , { glob = "[a&&b]", input = "&", expected = True }
     , { glob = "[a||b]", input = "|", expected = True }
     , { glob = "[a~~b]", input = "~", expected = True }
