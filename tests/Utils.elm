@@ -3,7 +3,6 @@ module Utils exposing (Expectation, checkAll, parseAll)
 import Expect
 import Glob
 import Json.Encode
-import List.Extra
 import Parser
 import Set
 import Test exposing (Test, test)
@@ -46,7 +45,6 @@ parseAll expectations =
 checkAll : List Expectation -> List Test
 checkAll expectations =
     expectations
-        |> List.Extra.unique
         |> List.map
             (\{ glob, input, expected } ->
                 test ("Glob: " ++ escape glob ++ " Input: " ++ escape input)
