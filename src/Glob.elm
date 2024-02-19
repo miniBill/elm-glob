@@ -223,8 +223,7 @@ fragmentParser =
                 , Parser.succeed False
                 ]
             |= Parser.getChompedString
-                (Parser.succeed ()
-                    |. Parser.oneOf [ Parser.symbol "]", Parser.succeed () ]
+                (Parser.oneOf [ Parser.symbol "]", Parser.succeed () ]
                     |. Parser.chompWhile (\c -> c /= ']')
                 )
             |. Parser.symbol "]"
