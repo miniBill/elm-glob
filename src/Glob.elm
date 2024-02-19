@@ -1,5 +1,5 @@
 module Glob exposing
-    ( Glob, fromString
+    ( Glob, fromString, never
     , match
     )
 
@@ -7,7 +7,7 @@ module Glob exposing
 
 [glob]: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
-@docs Glob, fromString
+@docs Glob, fromString, never
 @docs match
 
 -}
@@ -17,7 +17,7 @@ import Regex exposing (Regex)
 import Set exposing (Set)
 
 
-{-| A correctly parsed Glob expression.
+{-| A Glob expression.
 -}
 type Glob
     = Glob (List Component)
@@ -70,7 +70,14 @@ matchComponents components segments =
                 False
 
 
-{-| Parse a string into a `Glob`.
+{-| A `glob` that never matches.
+-}
+never : Glob
+never =
+    Glob []
+
+
+{-| Parse a string into a `glob`.
 -}
 fromString : String -> Result (List Parser.DeadEnd) Glob
 fromString input =
