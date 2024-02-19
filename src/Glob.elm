@@ -138,9 +138,10 @@ fragmentsToRegex original fragments =
     let
         regexString : String
         regexString =
-            fragments
-                |> List.map fragmentToRegexString
-                |> String.concat
+            List.foldl
+                (\fragment acc -> acc ++ fragmentToRegexString fragment)
+                ""
+                fragments
     in
     case Regex.fromStringWith { caseInsensitive = False, multiline = True } ("^" ++ regexString ++ "$") of
         Nothing ->
