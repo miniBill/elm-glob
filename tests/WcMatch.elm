@@ -45,6 +45,7 @@ expectations =
     -- Wildcard tests
     , { glob = "te*", input = "test", expected = True }
     , { glob = "te*ÿ", input = "testÿ", expected = True }
+    , { glob = "te*", input = "testÿ", expected = True }
     , { glob = "foo*", input = "foo\nbar\nbaz", expected = True }
 
     -- Ensure that we don't fail on regular expression related symbols
