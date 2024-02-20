@@ -64,7 +64,13 @@ checkAll expectations =
                             Ok validGlob ->
                                 Glob.match validGlob input
                                     |> Expect.equal expected
-                                    |> Expect.onFail "Should not have matched"
+                                    |> Expect.onFail
+                                        (if expected then
+                                            "Should have matched"
+
+                                         else
+                                            "Should not have matched"
+                                        )
                     )
             )
 
