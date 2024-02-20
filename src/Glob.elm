@@ -36,7 +36,7 @@ type Fragment
     | Asterisk
 
 
-{-| Match an input against a glob.
+{-| Match a file path against a glob.
 -}
 match : Glob -> String -> Bool
 match (Glob parsed) input =
