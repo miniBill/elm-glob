@@ -1,6 +1,6 @@
 # `miniBill/elm-glob` [![Build Status](https://github.com/miniBill/elm-glob/workflows/CI/badge.svg)](https://github.com/miniBill/elm-glob/actions?query=branch%3Amain)
 
-Matches file paths against a [glob](https://en.wikipedia.org/wiki/Glob_%28programming%29).
+Matches file paths against a [glob](https://man7.org/linux/man-pages/man7/glob.7.html).
 
 ```elm
 import Glob exposing (Glob)
