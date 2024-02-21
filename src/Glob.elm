@@ -1,28 +1,23 @@
 module Glob exposing
-    ( match
-    , Glob, fromString, matchGlob
+    ( Glob, fromString, never
+    , match
     )
 
-{-|
+{-| A library for working with [glob].
 
+[glob]: https://en.wikipedia.org/wiki/Glob_%28programming%29
 
-# Simple usage
-
+@docs Glob, fromString, never
 @docs match
-
-
-# Efficient usage
-
-@docs Glob, fromString, matchGlob
 
 -}
 
 import Parser exposing ((|.), (|=), Parser)
 import Regex exposing (Regex)
-import Set exposing (Set)
+import Set
 
 
-{-| A type representing a correctly parsed Glob expression.
+{-| A Glob expression.
 -}
 type Glob
     = Glob (List Component)
@@ -30,32 +25,21 @@ type Glob
 
 type Component
     = TwoAsterisks
-    | Fragments ( List Fragment, Regex )
+    | Fragments Regex
 
 
 type Fragment
     = Literal String
-    | Alternatives (Set String)
+    | Alternatives (List String)
     | Class { negative : Bool, inner : String }
     | QuestionMark
     | Asterisk
 
 
-{-| Match a given glob against an input.
-
-If you want to match the same glob against multiple inputs you should use `parse` and `matchGlob` instead.
-
+{-| Match a file path against a glob.
 -}
-match : String -> String -> Result (List Parser.DeadEnd) Bool
-match glob input =
-    fromString glob
-        |> Result.map (\parsed -> matchGlob parsed input)
-
-
-{-| Match a given glob against an input.
--}
-matchGlob : Glob -> String -> Bool
-matchGlob (Glob parsed) input =
+match : Glob -> String -> Bool
+match (Glob parsed) input =
     matchComponents parsed (String.split "/" input)
 
 
@@ -78,7 +62,7 @@ matchComponents components segments =
             else
                 matchComponents ctail segments
 
-        ( (Fragments ( _, chead )) :: ctail, shead :: stail ) ->
+        ( (Fragments chead) :: ctail, shead :: stail ) ->
             if Regex.contains chead shead then
                 matchComponents ctail stail
 
@@ -86,7 +70,14 @@ matchComponents components segments =
                 False
 
 
-{-| Parse a string into a `Glob`.
+{-| A `glob` that never matches.
+-}
+never : Glob
+never =
+    Glob []
+
+
+{-| Parse a string into a `glob`.
 -}
 fromString : String -> Result (List Parser.DeadEnd) Glob
 fromString input =
@@ -113,7 +104,7 @@ componentParser =
     Parser.oneOf
         [ Parser.succeed TwoAsterisks
             |. Parser.symbol "**"
-        , Parser.succeed (\before parsed after source -> ( parsed, String.slice before after source ))
+        , Parser.succeed fragmentsToRegex
             |= Parser.getOffset
             |= Parser.sequence
                 { start = ""
@@ -125,30 +116,28 @@ componentParser =
                 }
             |= Parser.getOffset
             |= Parser.getSource
-            |> Parser.andThen
-                (\( fragments, original ) ->
-                    Parser.succeed (\regex -> Fragments ( fragments, regex ))
-                        |= fragmentsToRegex original fragments
-                )
+            |> Parser.andThen identity
+            |> Parser.map Fragments
         ]
 
 
-fragmentsToRegex : String -> List Fragment -> Parser Regex
-fragmentsToRegex original fragments =
+fragmentsToRegex : Int -> List Fragment -> Int -> String -> Parser Regex
+fragmentsToRegex before fragments after source =
     let
         regexString : String
         regexString =
-            fragments
-                |> List.map fragmentToRegexString
-                |> String.concat
+            List.foldl
+                (\fragment acc -> acc ++ fragmentToRegexString fragment)
+                "^"
+                fragments
     in
-    case Regex.fromStringWith { caseInsensitive = False, multiline = True } ("^" ++ regexString ++ "$") of
+    case Regex.fromStringWith { caseInsensitive = False, multiline = True } (regexString ++ "$") of
         Nothing ->
             Parser.problem <|
                 "Could not parse \""
                     ++ regexString
                     ++ "\" as a regex, obtained from "
-                    ++ original
+                    ++ String.slice before after source
 
         Just regex ->
             Parser.succeed regex
@@ -161,7 +150,7 @@ fragmentToRegexString fragment =
             regexEscape literal
 
         Alternatives alternatives ->
-            "(" ++ String.join "|" (List.map regexEscape <| Set.toList alternatives) ++ ")"
+            "(" ++ String.join "|" (List.map regexEscape alternatives) ++ ")"
 
         Class { negative, inner } ->
             let
@@ -217,7 +206,7 @@ fragmentParser =
             |. Parser.symbol "?"
         , Parser.succeed Asterisk
             |. Parser.symbol "*"
-        , Parser.succeed (Alternatives << Set.fromList)
+        , Parser.succeed (Alternatives << Set.toList << Set.fromList)
             |= Parser.sequence
                 { start = "{"
                 , end = "}"
@@ -226,7 +215,14 @@ fragmentParser =
                 , spaces = Parser.succeed ()
                 , item = nonemptyChomper <| \c -> notSpecial c && c /= ','
                 }
-        , Parser.succeed (\negative inner -> Class { negative = negative, inner = inner })
+        , Parser.succeed
+            (\negative inner closed source ->
+                if closed then
+                    Class { negative = negative, inner = inner }
+
+                else
+                    Literal source
+            )
             |. Parser.symbol "["
             |= Parser.oneOf
                 [ Parser.succeed True
@@ -234,11 +230,14 @@ fragmentParser =
                 , Parser.succeed False
                 ]
             |= Parser.getChompedString
-                (Parser.succeed ()
-                    |. Parser.oneOf [ Parser.symbol "]", Parser.succeed () ]
-                    |. Parser.chompWhile (\c -> c /= ']')
-                )
-            |. Parser.symbol "]"
+                (Parser.chompWhile (\c -> c /= ']'))
+            |= Parser.oneOf
+                [ Parser.symbol "]"
+                    |> Parser.map (\() -> True)
+                , Parser.end
+                    |> Parser.map (\() -> False)
+                ]
+            |= Parser.getSource
         , Parser.succeed Literal
             |= nonemptyChomper notSpecial
         , Parser.problem "fragmentParser"
@@ -253,19 +252,17 @@ nonemptyChomper f =
         )
 
 
-specialChars : Set Char
-specialChars =
-    [ '*'
-    , '{'
-    , '}'
-    , '['
-    , ']'
-    , '?'
-    , '/'
-    ]
-        |> Set.fromList
-
-
 notSpecial : Char -> Bool
 notSpecial c =
-    not (Set.member c specialChars)
+    not (isSpecialChar c)
+
+
+isSpecialChar : Char -> Bool
+isSpecialChar c =
+    (c == '/')
+        || (c == '*')
+        || (c == '{')
+        || (c == '}')
+        || (c == '[')
+        || (c == ']')
+        || (c == '?')

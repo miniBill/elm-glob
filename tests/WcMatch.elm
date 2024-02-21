@@ -10,7 +10,6 @@ expectations =
     [ { glob = "src/foo.css", input = "src/foo.css", expected = True }
 
     -- Basic test of traditional features
-    , { glob = "abc", input = "abc", expected = True }
     , { glob = "?*?", input = "abc", expected = True }
     , { glob = "???*", input = "abc", expected = True }
     , { glob = "*???", input = "abc", expected = True }
@@ -46,12 +45,17 @@ expectations =
     -- Wildcard tests
     , { glob = "te*", input = "test", expected = True }
     , { glob = "te*ÿ", input = "testÿ", expected = True }
-    , { glob = "foo*", input = "foo\nbar", expected = True }
+    , { glob = "te*", input = "testÿ", expected = True }
+    , { glob = "foo*", input = "foo\nbar\nbaz", expected = True }
 
     -- Ensure that we don't fail on regular expression related symbols
     -- such as &&, ||, ~~, --, or [.  Currently re doesn't do anything with
     -- && etc., but they are handled special in re as there are plans to utilize them.
     , { glob = "[[]", input = "[", expected = True }
+    , { glob = "[", input = "[", expected = True }
+    , { glob = "[abc", input = "[abc", expected = True }
+    , { glob = "[abc", input = "[ab", expected = False }
+    , { glob = "[abc", input = "[abcd", expected = False }
     , { glob = "[a&&b]", input = "&", expected = True }
     , { glob = "[a||b]", input = "|", expected = True }
     , { glob = "[a~~b]", input = "~", expected = True }

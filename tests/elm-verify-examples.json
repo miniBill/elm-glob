@@ -1,6 +1,5 @@
 {
   "tests": [
-    "Glob",
     "./README.md"
   ]
 }

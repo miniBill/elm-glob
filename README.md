@@ -1,12 +1,18 @@
 # `miniBill/elm-glob` [![Build Status](https://github.com/miniBill/elm-glob/workflows/CI/badge.svg)](https://github.com/miniBill/elm-glob/actions?query=branch%3Amain)
 
-Matches inputs against a [glob](https://en.wikipedia.org/wiki/Glob_%28programming%29).
-
-Usage:
+Matches file paths against a [glob](https://man7.org/linux/man-pages/man7/glob.7.html).
 
 ```elm
-import Glob
+import Glob exposing (Glob)
 
-Glob.match "src/*.css" "src/style.css" --> Ok True
-Glob.match "src/file.?sv" "src/file.sv" --> Ok False
+glob : Glob
+glob =
+    Glob.fromString "src/*.css*"
+        |> Result.withDefault Glob.never
+
+Glob.match glob "src/style.css"
+--> True
+
+Glob.match glob "src/file.sv"
+--> False
 ```

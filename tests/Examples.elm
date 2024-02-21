@@ -1,6 +1,9 @@
-module Examples exposing (matchTests, parseTests)
+module Examples exposing (matchTests, neverTests, parseTests)
 
-import Test exposing (Test, describe)
+import Expect
+import Fuzz
+import Glob
+import Test exposing (Test, describe, fuzz)
 import Utils
 
 
@@ -41,7 +44,7 @@ parseTests : Test
 parseTests =
     expectations
         |> Utils.parseAll
-        |> describe "Glob.parse"
+        |> describe "Glob.fromString"
 
 
 matchTests : Test
@@ -49,3 +52,11 @@ matchTests =
     expectations
         |> Utils.checkAll
         |> describe "Glob.match"
+
+
+neverTests : Test
+neverTests =
+    fuzz Fuzz.string "Glob.match Glob.never should return False for any input" <|
+        \str ->
+            Glob.match Glob.never str
+                |> Expect.equal False

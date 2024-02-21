@@ -3,7 +3,6 @@ module Utils exposing (Expectation, checkAll, parseAll)
 import Expect
 import Glob
 import Json.Encode
-import List.Extra
 import Parser
 import Set
 import Test exposing (Test, test)
@@ -46,20 +45,32 @@ parseAll expectations =
 checkAll : List Expectation -> List Test
 checkAll expectations =
     expectations
-        |> List.Extra.unique
         |> List.map
             (\{ glob, input, expected } ->
                 test ("Glob: " ++ escape glob ++ " Input: " ++ escape input)
                     (\() ->
-                        -- match to be implemented yourself :D
-                        if Glob.match glob input == Ok expected then
-                            Expect.pass
+                        case Glob.fromString glob of
+                            Err [ single ] ->
+                                case single.problem of
+                                    Parser.Problem message ->
+                                        Expect.fail <| "Failed to parse: " ++ message
 
-                        else if expected then
-                            Expect.fail "Should have matched"
+                                    _ ->
+                                        Expect.fail <| "Failed to parse:[] " ++ Debug.toString e
 
-                        else
-                            Expect.fail "Should not have matched"
+                            Err e ->
+                                Expect.fail <| "Failed to parse: " ++ Debug.toString e
+
+                            Ok validGlob ->
+                                Glob.match validGlob input
+                                    |> Expect.equal expected
+                                    |> Expect.onFail
+                                        (if expected then
+                                            "Should have matched"
+
+                                         else
+                                            "Should not have matched"
+                                        )
                     )
             )
 
